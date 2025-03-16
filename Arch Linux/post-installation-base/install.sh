@@ -83,27 +83,55 @@ install_git() {
 }
 
 # Funzione per installare yay
+
 install_yay() {
     echo "Installazione di yay..."
-    if ! command -v yay &> /dev/null; then
-        sudo pacman -S --needed --noconfirm base-devel
-        if [ $? -ne 0 ]; then
-            echo "Errore durante l'installazione delle dipendenze per yay."
-            exit 1
-        fi
-        git clone https://aur.archlinux.org/yay.git
-        cd yay
-        makepkg -si --noconfirm
-        if [ $? -ne 0 ]; then
-            echo "Errore durante l'installazione di yay."
-            exit 1
-        fi
-        cd ..
-        rm -rf yay
-    else
+
+    # Check if yay is already installed
+    if command -v yay &> /dev/null; then
         echo "yay è già installato."
+        return 0 # Exit successfully
     fi
+
+    # Install base-devel
+    echo "Installazione di base-devel (dipendenze per yay)..."
+    sudo pacman -S --needed --noconfirm base-devel
+    if [ $? -ne 0 ]; then
+        echo "Errore: impossibile installare base-devel. Controlla la tua connessione internet e i mirror di pacman."
+        exit 1
+    fi
+
+    # Clone the yay repository
+    echo "Clonazione del repository yay da AUR..."
+    rm -rf yay # Remove any existing yay directory
+    git clone https://aur.archlinux.org/yay.git
+    if [ $? -ne 0 ]; then
+        echo "Errore: impossibile clonare il repository yay. Controlla la tua connessione internet e che git sia installato correttamente."
+        exit 1
+    fi
+
+    # Build and install yay
+    echo "Compilazione e installazione di yay..."
+    cd yay || { echo "Errore: impossibile accedere alla cartella yay."; exit 1; } # Exit if cd fails
+
+    # Clean the build directory
+    makepkg -C --noconfirm || { echo "Errore: impossibile pulire la cartella di compilazione."; exit 1; }
+
+    makepkg -si --noconfirm
+    if [ $? -ne 0 ]; then
+        echo "Errore: impossibile compilare e installare yay. Controlla i messaggi di errore di makepkg per maggiori dettagli."
+        exit 1
+    fi
+
+    # Cleanup
+    echo "Pulizia..."
+    cd .. || { echo "Errore: impossibile tornare alla cartella precedente."; exit 1; } # Exit if cd fails
+    rm -rf yay
+
+    echo "yay installato con successo."
+    return 0 # Exit successfully
 }
+
 
 
 # Funzione per installare l'ambiente desktop
