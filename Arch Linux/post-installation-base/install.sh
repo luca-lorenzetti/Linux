@@ -4,12 +4,15 @@
 VERSION="0.1.0"
 PROJECT_NAME="alscript"
 
+# Determina il percorso dello script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # File di configurazione
-PACKAGES_LIST="packages.list"
-PACKAGESAUR_LIST="packagesaur.list"
-CONFIGS_BASE_DIR="configs" # Cartella base per le configurazioni
-BASHRC_FILE=".bashrc"
-ASCII_FILE="ASCII.txt"
+PACKAGES_LIST="$SCRIPT_DIR/packages.list"
+PACKAGESAUR_LIST="$SCRIPT_DIR/packagesaur.list"
+CONFIGS_BASE_DIR="$SCRIPT_DIR/configs" # Cartella base per le configurazioni
+BASHRC_FILE="$SCRIPT_DIR/.bashrc"
+ASCII_FILE="$SCRIPT_DIR/ASCII.txt"
 
 # Variabili per le scelte dell'utente
 DESKTOP_ENV=""
@@ -24,7 +27,8 @@ gather_initial_info() {
         echo "$(tput sgr0)" # Reset color after printing ASCII art
         echo "$(tput setaf 2)  Versione: $VERSION $(tput sgr0)"
     else
-        echo "Errore: file $ASCII_FILE non trovato."
+        echo "Errore: file $ASCII_FILE non trovato. Controlla il nome e la posizione del file."
+        exit 1 # Exit if the file is not found.
     fi
     echo "Benvenuto nel programma di installazione di $PROJECT_NAME"
 
