@@ -51,6 +51,14 @@ gather_initial_info() {
 }
 
 # Funzione per aggiornare il sistema
+/*************  ✨ Codeium Command ⭐  *************/
+# Aggiorna il sistema con pacman.
+#
+# Esegue il comando "pacman -Syy" per aggiornare la lista dei pacchetti e
+# "pacman -Syu" per aggiornare i pacchetti installati. Se una delle due
+# operazioni fallisce, viene mostrato un messaggio d'errore e il programma
+# esce con codice 1.
+/******  a4b3fc73-c638-4624-8d3e-e3f60b459dcf  *******/
 update_system() {
     echo "Aggiornamento del sistema..."
     sudo pacman -Syy --noconfirm && sudo pacman -Syu --noconfirm
@@ -96,6 +104,7 @@ install_yay() {
         echo "yay è già installato."
     fi
 }
+
 
 # Funzione per installare l'ambiente desktop
 install_desktop_env() {
