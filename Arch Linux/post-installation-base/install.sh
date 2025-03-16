@@ -79,6 +79,7 @@ install_git() {
 }
 
 # Funzione per installare yay
+# Funzione per installare yay
 install_yay() {
     echo "Installazione di yay..."
 
@@ -109,10 +110,14 @@ install_yay() {
     echo "Compilazione e installazione di yay..."
     cd yay || { echo "Errore: impossibile accedere alla cartella yay."; exit 1; } # Exit if cd fails
 
-    # Clean the build directory
-    makepkg -C --noconfirm || { echo "Errore: impossibile pulire la cartella di compilazione."; exit 1; }
+    # Clean the build directory (more robust)
+    if [ -d "src" ]; then
+        echo "Pulizia della cartella di compilazione (src)..."
+        rm -rf src/* || { echo "Errore: impossibile pulire la cartella di compilazione (src)."; exit 1; }
+    else
+        echo "Cartella src non trovata. Nessuna pulizia necessaria."
+    fi
 
-    # Capture and display the full output of makepkg
     makepkg -si --noconfirm 2>&1 | tee makepkg.log
     if [ $? -ne 0 ]; then
         echo "Errore: impossibile compilare e installare yay. Controlla il file makepkg.log per maggiori dettagli."
