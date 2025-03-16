@@ -51,14 +51,6 @@ gather_initial_info() {
 }
 
 # Funzione per aggiornare il sistema
-/*************  ✨ Codeium Command ⭐  *************/
-# Aggiorna il sistema con pacman.
-#
-# Esegue il comando "pacman -Syy" per aggiornare la lista dei pacchetti e
-# "pacman -Syu" per aggiornare i pacchetti installati. Se una delle due
-# operazioni fallisce, viene mostrato un messaggio d'errore e il programma
-# esce con codice 1.
-/******  a4b3fc73-c638-4624-8d3e-e3f60b459dcf  *******/
 update_system() {
     echo "Aggiornamento del sistema..."
     sudo pacman -Syy --noconfirm && sudo pacman -Syu --noconfirm
@@ -83,7 +75,6 @@ install_git() {
 }
 
 # Funzione per installare yay
-
 install_yay() {
     echo "Installazione di yay..."
 
@@ -117,9 +108,11 @@ install_yay() {
     # Clean the build directory
     makepkg -C --noconfirm || { echo "Errore: impossibile pulire la cartella di compilazione."; exit 1; }
 
-    makepkg -si --noconfirm
+    # Capture and display the full output of makepkg
+    makepkg -si --noconfirm 2>&1 | tee makepkg.log
     if [ $? -ne 0 ]; then
-        echo "Errore: impossibile compilare e installare yay. Controlla i messaggi di errore di makepkg per maggiori dettagli."
+        echo "Errore: impossibile compilare e installare yay. Controlla il file makepkg.log per maggiori dettagli."
+        cat makepkg.log # Display the log in the terminal
         exit 1
     fi
 
