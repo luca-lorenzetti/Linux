@@ -1,0 +1,9 @@
+[user]
+pinned=/usr/share/applications/thunar.desktop;/usr/share/applications/xfce4-terminal.desktop;/usr/share/applications/chromium.desktop;/usr/share/applications/visual-studio-code-url-handler.desktop;
+showWindowCount=false
+showPreviews=true
+indicatorStyle=2
+forceIconSize=true
+iconSize=24
+keyComboActive=false
+indicatorOrientation=0
