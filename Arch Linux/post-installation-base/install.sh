@@ -2,22 +2,58 @@
 
 # Informazioni sul progetto
 VERSION="0.1.0"
-NAME="Alpha"
+PROJECT_NAME="alscript"
 
 # File di configurazione
 PACKAGES_LIST="packages.list"
 PACKAGESAUR_LIST="packagesaur.list"
 CONFIGS_BASE_DIR="configs" # Cartella base per le configurazioni
 BASHRC_FILE=".bashrc"
+ASCII_FILE="ASCII.txt"
 
-# Ambiente desktop scelto
+# Variabili per le scelte dell'utente
 DESKTOP_ENV=""
+COPY_CONFIG="n" # Default: non copiare la cartella .config
+
+# Funzione per raccogliere le informazioni iniziali
+gather_initial_info() {
+    # Messaggio di benvenuto con stile ASCII da file
+    if [ -f "$ASCII_FILE" ]; then
+        echo "$(tput setaf 6)" # Set color before printing ASCII art
+        cat "$ASCII_FILE"
+        echo "$(tput sgr0)" # Reset color after printing ASCII art
+        echo "$(tput setaf 2)  Versione: $VERSION $(tput sgr0)"
+    else
+        echo "Errore: file $ASCII_FILE non trovato."
+    fi
+    echo "Benvenuto nel programma di installazione di $PROJECT_NAME"
+
+    # Scelta dell'ambiente desktop
+    echo "Scegli l'ambiente desktop da installare:"
+    echo "1. XFCE"
+    echo "2. KDE Plasma"
+    echo "3. GNOME"
+    echo "4. Nessun ambiente desktop"
+    read -p "Inserisci il numero corrispondente: " choice
+    case "$choice" in
+        1) DESKTOP_ENV="xfce4";;
+        2) DESKTOP_ENV="kde";;
+        3) DESKTOP_ENV="gnome";;
+        4) DESKTOP_ENV="";;
+        *) echo "Scelta non valida. Impostando nessun ambiente desktop."; DESKTOP_ENV="";;
+    esac
+
+    # Scelta se copiare la cartella .config
+    read -p "Vuoi copiare la cartella .config? (y/n): " choice
+    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+        COPY_CONFIG="y"
+    fi
+}
 
 # Funzione per aggiornare il sistema
 update_system() {
     echo "Aggiornamento del sistema..."
-    # Termina lo script con un messaggio di errore se l'aggiornamento non riesce.
-
+    sudo pacman -Syy --noconfirm && sudo pacman -Syu --noconfirm
     if [ $? -ne 0 ]; then
         echo "Errore durante l'aggiornamento del sistema."
         exit 1
@@ -61,23 +97,6 @@ install_yay() {
     fi
 }
 
-# Funzione per scegliere l'ambiente desktop
-choose_desktop_env() {
-    echo "Scegli l'ambiente desktop da installare:"
-    echo "1. XFCE"
-    echo "2. KDE Plasma"
-    echo "3. GNOME"
-    echo "4. Nessun ambiente desktop"
-    read -p "Inserisci il numero corrispondente: " choice
-    case "$choice" in
-        1) DESKTOP_ENV="xfce4";;
-        2) DESKTOP_ENV="kde";;
-        3) DESKTOP_ENV="gnome";;
-        4) DESKTOP_ENV="";;
-        *) echo "Scelta non valida. Impostando nessun ambiente desktop."; DESKTOP_ENV="";;
-    esac
-}
-
 # Funzione per installare l'ambiente desktop
 install_desktop_env() {
     if [ -n "$DESKTOP_ENV" ]; then
@@ -85,20 +104,20 @@ install_desktop_env() {
         DESKTOP_PACKAGES_FILE="$CONFIGS_BASE_DIR/$DESKTOP_ENV/$DESKTOP_ENV.list"
         DESKTOP_AUR_PACKAGES_FILE="$CONFIGS_BASE_DIR/$DESKTOP_ENV/${DESKTOP_ENV}_aur.list"
 
-        # Installazione pacchetti ufficiali XFCE4
+        # Installazione pacchetti ufficiali
         if [ -f "$DESKTOP_PACKAGES_FILE" ]; then
             sudo pacman -S --needed --noconfirm - < "$DESKTOP_PACKAGES_FILE"
             if [ $? -ne 0 ]; then
-                echo "Errore durante l'installazione dei pacchetti ufficiali XFCE4 da $DESKTOP_PACKAGES_FILE."
+                echo "Errore durante l'installazione dei pacchetti ufficiali da $DESKTOP_PACKAGES_FILE."
                 exit 1
             fi
         fi
 
-        # Installazione pacchetti AUR XFCE4 (solo se yay è installato)
+        # Installazione pacchetti AUR (solo se yay è installato)
         if [ -f "$DESKTOP_AUR_PACKAGES_FILE" ] && command -v yay &> /dev/null; then
             yay -S --needed --noconfirm - < "$DESKTOP_AUR_PACKAGES_FILE"
             if [ $? -ne 0 ]; then
-                echo "Errore durante l'installazione dei pacchetti AUR XFCE4 da $DESKTOP_AUR_PACKAGES_FILE."
+                echo "Errore durante l'installazione dei pacchetti AUR da $DESKTOP_AUR_PACKAGES_FILE."
                 exit 1
             fi
         fi
@@ -106,7 +125,6 @@ install_desktop_env() {
 }
 
 # Funzione per installare i pacchetti
-# Funzione per installare i pacchetti (RIMANE INVARIATA)
 install_packages() {
     echo "Installazione dei pacchetti..."
     if [ -f "$PACKAGES_LIST" ]; then
@@ -128,8 +146,7 @@ install_packages() {
 
 # Funzione per copiare i file di configurazione
 copy_config_files() {
-    read -p "Vuoi copiare la cartella .config? (y/n): " choice
-    if [[ "$choice" == "y" || "$choice" == "Y" ]]; then
+    if [[ "$COPY_CONFIG" == "y" ]]; then
         # Costruisci il percorso dinamico di CONFIG_DIR
         CONFIG_DIR="$CONFIGS_BASE_DIR/$DESKTOP_ENV/.config"
 
@@ -164,8 +181,8 @@ cleanup() {
 }
 
 # Inizio dello script
-# Messaggio di benvenuto
-echo "Benvenuto nel programma di installazione di $NAME $VERSION"
+# Raccolta delle informazioni iniziali
+gather_initial_info
 
 # Aggiornamento del sistema
 update_system
@@ -176,17 +193,16 @@ install_git
 # Installazione di yay
 install_yay
 
-# Scelta dell'ambiente desktop
-choose_desktop_env
-
 # Installazione dell'ambiente desktop
 install_desktop_env
 
 # Installazione dei pacchetti
 install_packages
 
-# Abilitazione del servizio lightdm
-sudo systemctl enable lightdm
+# Abilitazione del servizio lightdm (solo se è stato scelto un DE)
+if [ -n "$DESKTOP_ENV" ]; then
+    sudo systemctl enable lightdm
+fi
 
 # Copia dei file di configurazione
 copy_config_files
