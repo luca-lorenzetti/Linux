@@ -16,7 +16,8 @@ DESKTOP_ENV=""
 # Funzione per aggiornare il sistema
 update_system() {
     echo "Aggiornamento del sistema..."
-    sudo pacman -Syy --noconfirm && sudo pacman -Syu --noconfirm
+    # Termina lo script con un messaggio di errore se l'aggiornamento non riesce.
+
     if [ $? -ne 0 ]; then
         echo "Errore durante l'aggiornamento del sistema."
         exit 1
@@ -163,6 +164,7 @@ cleanup() {
 }
 
 # Inizio dello script
+# Messaggio di benvenuto
 echo "Benvenuto nel programma di installazione di $NAME $VERSION"
 
 # Aggiornamento del sistema
