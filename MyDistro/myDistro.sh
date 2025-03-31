@@ -89,8 +89,13 @@ main() {
       sudo chroot $MOUNTPOINT /bin/bash -c "mount /dev/$(findmnt -n -o SOURCE /boot/efi) $EFI_MOUNTPOINT"
   fi
 
-  sudo chroot $MOUNTPOINT /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB" || error_exit "Errore durante l'installazione di GRUB"
-  sudo chroot $MOUNTPOINT /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" || error_exit "Errore durante la configurazione di GRUB"
+  #Verifica l'esistenza di /bin/bash
+  if [[ -f "$MOUNTPOINT/bin/bash" ]]; then
+      sudo chroot $MOUNTPOINT /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB" || error_exit "Errore durante l'installazione di GRUB"
+      sudo chroot $MOUNTPOINT /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" || error_exit "Errore durante la configurazione di GRUB"
+  else
+      error_exit "/bin/bash non trovato nell'ambiente chroot"
+  fi
 
   sudo genisoimage -o $ISO_PATH -b isolinux/isolinux.bin -c isolinux/boot.cat -cache-inodes -J -R -T $MOUNTPOINT || error_exit "Errore durante la creazione dell'immagine ISO"
   echo "Immagine ISO creata: $ISO_PATH"
