@@ -48,7 +48,7 @@ sudo cp -r "$MOUNT_POINT/"* "$ISO_DIR/"
 
 # Generazione dell'immagine ISO
 echo "Generazione dell'immagine ISO..."
-genisoimage -o "$ISO_NAME" -b boot/grub/grub.cfg -graft-points /boot /boot /boot/grub /boot/grub "$ISO_DIR"
+genisoimage -o "$ISO_NAME" -b boot/grub/grub.cfg -root "$ISO_DIR"
 
 # Smontaggio dell'immagine .img
 echo "Smontaggio dell'immagine .img..."
