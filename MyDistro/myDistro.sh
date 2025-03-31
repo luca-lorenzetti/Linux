@@ -4,6 +4,13 @@
 PROFILE="releng"
 ISO_NAME="arch-custom.iso"
 
+# Installazione dei pacchetti necessari
+echo "Installazione di archiso e qemu-system-x86_64..."
+sudo pacman -S --needed archiso qemu-system-x86_64 || {
+  echo "Errore durante l'installazione dei pacchetti. Uscita."
+  exit 1
+}
+
 # Creazione della directory di lavoro
 mkdir archiso-build
 cd archiso-build
@@ -29,3 +36,6 @@ echo "setfont ter-132n" >> $PROFILE/profiledef.sh
 sudo mkarchiso -v -w . -o $ISO_NAME $PROFILE
 
 echo "Immagine ISO creata: $ISO_NAME"
+
+# Lancio dell'immagine ISO con qemu
+qemu-system-x86_64 -m 2G -cdrom $ISO_NAME
