@@ -42,7 +42,7 @@ main() {
   fi
 
   create_profile
-  add_packages_to-profile
+  add_packages_to_profile # Nome della funzione corretto
 
   # Crea l'immagine ISO
   sudo mkarchiso -v -w $WORKDIR -o $ISO_PATH $WORKDIR/$PROFILE/ || error_exit "Errore durante la creazione dell'immagine ISO"
