@@ -1,65 +1,16 @@
 #!/bin/bash
 
-# Variabili di configurazione
-DIST_NAME="mia-distro"
-WORKDIR="./build"
-ISO_PATH="./$DIST_NAME.iso"
-PROFILE="myprofile"
-ARCH_PACKAGES_FILE="arch_packages.list"
-AUR_PACKAGES_FILE="aur_packages.list"
+# Variabili
+PARTIZIONE="/dev/sda1"  # Sostituisci con la partizione del tuo sistema
+IMMAGINE="arch_system.img"
 
-# Funzione per gestire gli errori
-error_exit() {
-  echo "Errore: $1"
+# Verifica dei privilegi di root
+if [[ $EUID -ne 0 ]]; then
+  echo "Questo script deve essere eseguito come root."
   exit 1
-}
+fi
 
-# Funzione per creare il profilo di archiso
-create_profile() {
-  mkdir -p $WORKDIR/$PROFILE
-  cp -r /usr/share/archiso/configs/releng/ $WORKDIR/$PROFILE/
-  # Crea un file profiledef.sh vuoto
-  touch $WORKDIR/$PROFILE/profiledef.sh
+# Creazione dell'immagine
+dd if="$PARTIZIONE" of="$IMMAGINE" bs=4M status=progress
 
-  #Verifica la creazione della cartella del profilo
-  if [ ! -d "$WORKDIR/$PROFILE" ]; then
-    error_exit "Errore durante la creazione del profilo"
-  fi
-
-  echo "Contenuto della cartella del profilo:"
-  ls -l $WORKDIR/$PROFILE
-}
-
-# Funzione per aggiungere i pacchetti dai file .list al profilo
-add_packages_to_profile() {
-  if [ -f "$ARCH_PACKAGES_FILE" ]; then
-    PACKAGES=$(cat "$ARCH_PACKAGES_FILE")
-    echo "$PACKAGES" >> $WORKDIR/$PROFILE/packages.x86_64
-  fi
-  if [ -f "$AUR_PACKAGES_FILE" ]; then
-    PACKAGES=$(cat "$AUR_PACKAGES_FILE")
-    echo "$PACKAGES" >> $WORKDIR/$PROFILE/packages.x86_64
-  fi
-}
-
-# Funzione principale
-main() {
-  # Installa archiso se non è installato
-  if ! command -v mkarchiso &> /dev/null; then
-    sudo pacman -S --needed archiso || error_exit "Errore durante l'installazione di archiso"
-  fi
-
-  create_profile
-  add_packages_to_profile
-
-  # Log per verificare il contenuto della cartella del profilo
-  echo "Contenuto della cartella del profilo prima di mkarchiso:"
-  ls -l $WORKDIR/$PROFILE
-
-  # Crea l'immagine ISO
-  sudo mkarchiso -v -w $WORKDIR -o $ISO_PATH $WORKDIR/$PROFILE/ || error_exit "Errore durante la creazione dell'immagine ISO"
-
-  echo "Immagine ISO creata: $ISO_PATH"
-}
-
-main
+echo "Immagine creata con successo: $IMMAGINE"
