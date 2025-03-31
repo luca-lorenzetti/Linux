@@ -1,23 +1,23 @@
 #!/bin/bash
 
 # Variabili di configurazione
-DIST_NAME="mia-distro" # Nome della tua distribuzione
-WORKDIR="./build" # Directory di lavoro per la build
-ISO_PATH="./$DIST_NAME.iso" # Percorso dell'immagine ISO risultante
-MOUNTPOINT="$WORKDIR/rootfs" # Punto di montaggio per il rootfs
-ARCH_PACKAGES_FILE="arch_packages.list" # File con i pacchetti dei repository di Arch
-AUR_PACKAGES_FILE="aur_packages.list" # File con i pacchetti AUR
+DIST_NAME="mia-distro"
+WORKDIR="./build"
+ISO_PATH="./$DIST_NAME.iso"
+MOUNTPOINT="$WORKDIR/rootfs"
+ARCH_PACKAGES_FILE="arch_packages.list"
+AUR_PACKAGES_FILE="aur_packages.list"
+EFI_MOUNTPOINT="$MOUNTPOINT/boot/efi" #punto di mount della partizione EFI
 
-# Funzione per gestire gli errori e uscire dallo script
+# Funzione per gestire gli errori
 error_exit() {
-  echo "Errore: $1" # Stampa il messaggio di errore
-  cleanup # Esegue la pulizia delle partizioni e delle directory temporanee
-  exit 1 # Esce dallo script con codice di errore 1
+  echo "Errore: $1"
+  cleanup
+  exit 1
 }
 
-# Funzione per montare le partizioni necessarie
+# Funzione per montare le partizioni
 mount_partitions() {
-  # Crea le directory necessarie se non esistono
   if [ ! -d "$MOUNTPOINT/dev" ]; then
     sudo mkdir -p $MOUNTPOINT/dev || error_exit "Impossibile creare $MOUNTPOINT/dev"
   fi
@@ -31,7 +31,6 @@ mount_partitions() {
     sudo mkdir -p $MOUNTPOINT/dev/pts || error_exit "Impossibile creare $MOUNTPOINT/dev/pts"
   fi
 
-  # Monta le directory di sistema necessarie all'interno del chroot
   sudo mount -o bind /dev $MOUNTPOINT/dev || error_exit "Impossibile montare /dev"
   sudo mount -o bind /dev/pts $MOUNTPOINT/dev/pts || error_exit "Impossibile montare /dev/pts"
   sudo mount -o bind /proc $MOUNTPOINT/proc || error_exit "Impossibile montare /proc"
@@ -40,7 +39,6 @@ mount_partitions() {
 
 # Funzione per smontare le partizioni
 umount_partitions() {
-  # Smonta le directory di sistema montate in precedenza
   sudo umount $MOUNTPOINT/dev
   sudo umount $MOUNTPOINT/dev/pts
   sudo umount $MOUNTPOINT/proc
@@ -49,7 +47,6 @@ umount_partitions() {
 
 # Funzione per pulire le directory temporanee
 cleanup() {
-  # Smonta le partizioni e rimuove la directory del rootfs
   umount_partitions
   sudo rm -rf $MOUNTPOINT
 }
@@ -57,7 +54,7 @@ cleanup() {
 # Funzione per installare i pacchetti dai repository di Arch
 install_arch_packages() {
   if [ -f "$ARCH_PACKAGES_FILE" ]; then
-    PACKAGES=$(cat "$ARCH_PACKAGES_FILE") # Legge i pacchetti dal file
+    PACKAGES=$(cat "$ARCH_PACKAGES_FILE")
     sudo arch-chroot $MOUNTPOINT /bin/bash -c "pacman -Sy --noconfirm $PACKAGES" || error_exit "Errore durante l'installazione dei pacchetti da Arch"
   else
     echo "File $ARCH_PACKAGES_FILE non trovato."
@@ -67,45 +64,37 @@ install_arch_packages() {
 # Funzione per installare i pacchetti dall'AUR
 install_aur_packages() {
   if [ -f "$AUR_PACKAGES_FILE" ]; then
-    PACKAGES=$(cat "$AUR_PACKAGES_FILE") # Legge i pacchetti dal file
+    PACKAGES=$(cat "$AUR_PACKAGES_FILE")
     sudo arch-chroot $MOUNTPOINT /bin/bash -c "yay -S --noconfirm $PACKAGES" || error_exit "Errore durante l'installazione dei pacchetti dall'AUR"
   else
     echo "File $AUR_PACKAGES_FILE non trovato."
   fi
 }
 
-# Funzione principale per la creazione dell'ISO
+# Funzione principale
 main() {
-  # 1. Crea la directory di lavoro del rootfs
   mkdir -p $MOUNTPOINT
-
-  # 2. Monta le partizioni necessarie
   mount_partitions
-
-  # 3. Installa i pacchetti dai repository di Arch
   install_arch_packages
-
-  # 4. Installa i pacchetti dall'AUR
   install_aur_packages
-
-  # 5. Configura il sistema all'interno del chroot (esempio: imposta il nome host)
   echo "$DIST_NAME" | sudo tee $MOUNTPOINT/etc/hostname
   sudo arch-chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 localhost' > /etc/hosts"
   sudo arch-chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 $DIST_NAME' >> /etc/hosts"
 
-  # 6. Installa e configura il bootloader GRUB
+  #Installa GRUB
+  sudo arch-chroot $MOUNTPOINT /bin/bash -c "pacman -S --noconfirm grub efibootmgr" || error_exit "Errore durante l'installazione di GRUB e efibootmgr"
+
+  #Monta la partizione EFI se presente
+  if [[ -d "$EFI_MOUNTPOINT" ]]; then
+      sudo arch-chroot $MOUNTPOINT /bin/bash -c "mount /dev/$(findmnt -n -o SOURCE /boot/efi) $EFI_MOUNTPOINT"
+  fi
+
   sudo arch-chroot $MOUNTPOINT /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB" || error_exit "Errore durante l'installazione di GRUB"
   sudo arch-chroot $MOUNTPOINT /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" || error_exit "Errore durante la configurazione di GRUB"
 
-  # 7. Crea l'immagine ISO utilizzando genisoimage
   sudo genisoimage -o $ISO_PATH -b isolinux/isolinux.bin -c isolinux/boot.cat -cache-inodes -J -R -T $MOUNTPOINT || error_exit "Errore durante la creazione dell'immagine ISO"
-
-  # Stampa un messaggio di successo
   echo "Immagine ISO creata: $ISO_PATH"
-
-  # 8. Esegue la pulizia delle partizioni e cartelle temporanee.
   cleanup
 }
 
-# Esegue la funzione principale
 main
