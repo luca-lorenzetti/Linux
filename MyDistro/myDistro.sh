@@ -18,6 +18,8 @@ error_exit() {
 create_profile() {
   mkdir -p $WORKDIR/$PROFILE
   cp -r /usr/share/archiso/configs/releng/ $WORKDIR/$PROFILE/
+  # Crea un file profiledef.sh vuoto
+  touch $WORKDIR/$PROFILE/profiledef.sh
 }
 
 # Funzione per aggiungere i pacchetti dai file .list al profilo
@@ -40,7 +42,7 @@ main() {
   fi
 
   create_profile
-  add_packages_to_profile
+  add_packages_to-profile
 
   # Crea l'immagine ISO
   sudo mkarchiso -v -w $WORKDIR -o $ISO_PATH $WORKDIR/$PROFILE/ || error_exit "Errore durante la creazione dell'immagine ISO"
