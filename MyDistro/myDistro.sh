@@ -39,15 +39,17 @@ mount_partitions() {
 
 # Funzione per smontare le partizioni
 umount_partitions() {
-  sudo umount $MOUNTPOINT/dev
-  sudo umount $MOUNTPOINT/dev/pts
-  sudo umount $MOUNTPOINT/proc
-  sudo umount $MOUNTPOINT/sys
+  sudo umount -l $MOUNTPOINT/dev
+  sudo umount -l $MOUNTPOINT/dev/pts
+  sudo umount -l $MOUNTPOINT/proc
+  sudo umount -l $MOUNTPOINT/sys
 }
 
 # Funzione per pulire le directory temporanee
 cleanup() {
   umount_partitions
+  echo "Contenuto di $MOUNTPOINT prima della rimozione:"
+  ls -l $MOUNTPOINT
   sudo rm -rf $MOUNTPOINT
 }
 
@@ -78,8 +80,11 @@ main() {
   install_arch_packages
   install_aur_packages
 
-  # Crea il file /etc/hostname
+  # Crea il file /etc/hostname e verifica che sia stato creato
   echo "$DIST_NAME" | sudo tee $MOUNTPOINT/etc/hostname
+  if [ ! -f "$MOUNTPOINT/etc/hostname" ]; then
+    error_exit "Impossibile creare /etc/hostname"
+  fi
 
   sudo chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 localhost' > /etc/hosts"
   sudo chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 $DIST_NAME' >> /etc/hosts"
