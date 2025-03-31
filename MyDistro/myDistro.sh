@@ -17,9 +17,18 @@ error_exit() {
 
 # Funzione per montare le partizioni necessarie
 mount_partitions() {
-  # Crea la directory $MOUNTPOINT/dev se non esiste
+  # Crea le directory necessarie se non esistono
   if [ ! -d "$MOUNTPOINT/dev" ]; then
     sudo mkdir -p $MOUNTPOINT/dev || error_exit "Impossibile creare $MOUNTPOINT/dev"
+  fi
+  if [ ! -d "$MOUNTPOINT/proc" ]; then
+    sudo mkdir -p $MOUNTPOINT/proc || error_exit "Impossibile creare $MOUNTPOINT/proc"
+  fi
+  if [ ! -d "$MOUNTPOINT/sys" ]; then
+    sudo mkdir -p $MOUNTPOINT/sys || error_exit "Impossibile creare $MOUNTPOINT/sys"
+  fi
+  if [ ! -d "$MOUNTPOINT/dev/pts" ]; then
+    sudo mkdir -p $MOUNTPOINT/dev/pts || error_exit "Impossibile creare $MOUNTPOINT/dev/pts"
   fi
 
   # Monta le directory di sistema necessarie all'interno del chroot
