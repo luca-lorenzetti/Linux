@@ -77,7 +77,10 @@ main() {
   mount_partitions
   install_arch_packages
   install_aur_packages
+
+  # Crea il file /etc/hostname
   echo "$DIST_NAME" | sudo tee $MOUNTPOINT/etc/hostname
+
   sudo chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 localhost' > /etc/hosts"
   sudo chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 $DIST_NAME' >> /etc/hosts"
 
