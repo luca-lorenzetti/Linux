@@ -7,7 +7,7 @@ ISO_PATH="./$DIST_NAME.iso"
 MOUNTPOINT="$WORKDIR/rootfs"
 ARCH_PACKAGES_FILE="arch_packages.list"
 AUR_PACKAGES_FILE="aur_packages.list"
-EFI_MOUNTPOINT="$MOUNTPOINT/boot/efi" #punto di mount della partizione EFI
+EFI_MOUNTPOINT="$MOUNTPOINT/boot/efi"
 
 # Funzione per gestire gli errori
 error_exit() {
@@ -55,7 +55,7 @@ cleanup() {
 install_arch_packages() {
   if [ -f "$ARCH_PACKAGES_FILE" ]; then
     PACKAGES=$(cat "$ARCH_PACKAGES_FILE")
-    sudo arch-chroot $MOUNTPOINT /bin/bash -c "pacman -Sy --noconfirm $PACKAGES" || error_exit "Errore durante l'installazione dei pacchetti da Arch"
+    sudo chroot $MOUNTPOINT /bin/bash -c "pacman -Sy --noconfirm $PACKAGES" || error_exit "Errore durante l'installazione dei pacchetti da Arch"
   else
     echo "File $ARCH_PACKAGES_FILE non trovato."
   fi
@@ -65,7 +65,7 @@ install_arch_packages() {
 install_aur_packages() {
   if [ -f "$AUR_PACKAGES_FILE" ]; then
     PACKAGES=$(cat "$AUR_PACKAGES_FILE")
-    sudo arch-chroot $MOUNTPOINT /bin/bash -c "yay -S --noconfirm $PACKAGES" || error_exit "Errore durante l'installazione dei pacchetti dall'AUR"
+    sudo chroot $MOUNTPOINT /bin/bash -c "yay -S --noconfirm $PACKAGES" || error_exit "Errore durante l'installazione dei pacchetti dall'AUR"
   else
     echo "File $AUR_PACKAGES_FILE non trovato."
   fi
@@ -78,19 +78,19 @@ main() {
   install_arch_packages
   install_aur_packages
   echo "$DIST_NAME" | sudo tee $MOUNTPOINT/etc/hostname
-  sudo arch-chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 localhost' > /etc/hosts"
-  sudo arch-chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 $DIST_NAME' >> /etc/hosts"
+  sudo chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 localhost' > /etc/hosts"
+  sudo chroot $MOUNTPOINT /bin/bash -c "echo '127.0.0.1 $DIST_NAME' >> /etc/hosts"
 
   #Installa GRUB
-  sudo arch-chroot $MOUNTPOINT /bin/bash -c "pacman -S --noconfirm grub efibootmgr" || error_exit "Errore durante l'installazione di GRUB e efibootmgr"
+  sudo chroot $MOUNTPOINT /bin/bash -c "pacman -S --noconfirm grub efibootmgr" || error_exit "Errore durante l'installazione di GRUB e efibootmgr"
 
   #Monta la partizione EFI se presente
   if [[ -d "$EFI_MOUNTPOINT" ]]; then
-      sudo arch-chroot $MOUNTPOINT /bin/bash -c "mount /dev/$(findmnt -n -o SOURCE /boot/efi) $EFI_MOUNTPOINT"
+      sudo chroot $MOUNTPOINT /bin/bash -c "mount /dev/$(findmnt -n -o SOURCE /boot/efi) $EFI_MOUNTPOINT"
   fi
 
-  sudo arch-chroot $MOUNTPOINT /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB" || error_exit "Errore durante l'installazione di GRUB"
-  sudo arch-chroot $MOUNTPOINT /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" || error_exit "Errore durante la configurazione di GRUB"
+  sudo chroot $MOUNTPOINT /bin/bash -c "grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB" || error_exit "Errore durante l'installazione di GRUB"
+  sudo chroot $MOUNTPOINT /bin/bash -c "grub-mkconfig -o /boot/grub/grub.cfg" || error_exit "Errore durante la configurazione di GRUB"
 
   sudo genisoimage -o $ISO_PATH -b isolinux/isolinux.bin -c isolinux/boot.cat -cache-inodes -J -R -T $MOUNTPOINT || error_exit "Errore durante la creazione dell'immagine ISO"
   echo "Immagine ISO creata: $ISO_PATH"
